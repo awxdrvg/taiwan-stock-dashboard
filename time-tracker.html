@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>時間記錄</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+TC:wght@300;400;500&display=swap');
+
+/* ── THEMES ─────────────────────────────────── */
+html, body { min-height: 100%; }
+
+/* 1. 耿鬼 Gengar */
+[data-theme="gengar"] {
+  --bg: #0d0a14;
+  --bg2: rgba(123,94,167,0.14);
+  --surface: #17112a;
+  --surface2: #1f1838;
+  --border: #2e2050;
+  --text: #e8e0ff;
+  --text2: #9080c0;
+  --text3: #504070;
+  --accent: #cc2244;
+  --accent2: #ff4466;
+  --glow: rgba(204,34,68,0.22);
+  --header-icon: "👻";
+  --radius: 14px;
+}
+
+/* 2. 深夜咖啡館 */
+[data-theme="cafe"] {
+  --bg: #1a1008;
+  --bg2: rgba(180,120,40,0.10);
+  --surface: #241808;
+  --surface2: #2e2010;
+  --border: #4a3010;
+  --text: #f5e6c8;
+  --text2: #b09060;
+  --text3: #6a5030;
+  --accent: #d4822a;
+  --accent2: #f0a040;
+  --glow: rgba(212,130,42,0.22);
+  --header-icon: "☕";
+  --radius: 10px;
+}
+
+/* 3. 極光 Aurora */
+[data-theme="aurora"] {
+  --bg: #060e18;
+  --bg2: rgba(0,200,150,0.08);
+  --surface: #0a1a28;
+  --surface2: #0e2030;
+  --border: #0e3040;
+  --text: #d0fff0;
+  --text2: #50c0a0;
+  --text3: #206050;
+  --accent: #00e8a0;
+  --accent2: #40ffb8;
+  --glow: rgba(0,232,160,0.20);
+  --header-icon: "🌌";
+  --radius: 20px;
+}
+
+/* 4. 紙張筆記 Paper */
+[data-theme="paper"] {
+  --bg: #f5f0e8;
+  --bg2: rgba(0,0,0,0);
+  --surface: #fffdf8;
+  --surface2: #ede8de;
+  --border: #d8d0c0;
+  --text: #2a2418;
+  --text2: #7a7060;
+  --text3: #b0a890;
+  --accent: #c04030;
+  --accent2: #e05040;
+  --glow: rgba(192,64,48,0.15);
+  --header-icon: "📓";
+  --radius: 6px;
+}
+
+/* 5. 霓虹都市 Neon */
+[data-theme="neon"] {
+  --bg: #030308;
+  --bg2: rgba(255,0,128,0.06);
+  --surface: #0a0a18;
+  --surface2: #101020;
+  --border: #1a1a40;
+  --text: #f0f0ff;
+  --text2: #8080c0;
+  --text3: #303060;
+  --accent: #ff0080;
+  --accent2: #ff40a0;
+  --glow: rgba(255,0,128,0.25);
+  --header-icon: "🌃";
+  --radius: 4px;
+}
+
+/* ── BASE ────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(ellipse at 50% 0%, var(--bg2) 0%, transparent 65%);
+  color: var(--text);
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+  transition: background-color .4s, color .4s;
+}
+
+/* ── NAV ─────────────────────────────────────── */
+.nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background-color: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex; z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+  transition: background-color .4s, border-color .4s;
+}
+.nav-btn {
+  flex: 1; padding: 12px 0 10px;
+  background: none; border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--text3); font-size: 10px; font-family: inherit;
+  transition: color .2s;
+}
+.nav-btn.active { color: var(--accent2); }
+.nav-btn.active svg { filter: drop-shadow(0 0 5px var(--accent)); }
+.nav-btn svg { width: 22px; height: 22px; }
+
+/* ── PAGES ───────────────────────────────────── */
+.page { display: none; padding: 20px 16px; }
+.page.active { display: block; }
+
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-top: 8px; }
+.page-header-left { flex: 1; }
+.header-icon { font-size: 28px; line-height: 1; margin-bottom: 4px; filter: drop-shadow(0 0 8px var(--glow)); }
+.page-title { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; color: var(--text); }
+.page-sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+/* ── THEME SWITCHER ──────────────────────────── */
+.theme-switcher-btn {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 8px 10px;
+  cursor: pointer; font-size: 11px; color: var(--text2);
+  font-family: inherit; white-space: nowrap;
+  transition: all .2s;
+}
+.theme-switcher-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+.theme-panel {
+  display: none; margin-bottom: 20px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 14px; gap: 8px;
+}
+.theme-panel.open { display: flex; flex-wrap: wrap; }
+.theme-option {
+  flex: 1; min-width: 80px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 10px 6px;
+  cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  font-size: 10px; color: var(--text2); font-family: inherit;
+  transition: all .2s;
+}
+.theme-option .th-icon { font-size: 22px; }
+.theme-option:hover { border-color: var(--accent); color: var(--text); }
+.theme-option.active { border-color: var(--accent); color: var(--accent2); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* ── FORM ────────────────────────────────────── */
+.form-section { margin-bottom: 20px; }
+.form-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+.cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cat-btn {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 10px 4px 8px;
+  cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  font-size: 10px; color: var(--text2); font-family: inherit;
+  transition: all .15s;
+}
+.cat-btn .cat-icon { font-size: 20px; }
+.cat-btn.selected { border-color: currentColor; background: color-mix(in srgb, currentColor 15%, transparent); box-shadow: 0 0 10px color-mix(in srgb, currentColor 25%, transparent); }
+.cat-btn[data-cat="工作"]   { color: #ff5566; }
+.cat-btn[data-cat="研究"]   { color: #c084fc; }
+.cat-btn[data-cat="娛樂"]   { color: #4ade80; }
+.cat-btn[data-cat="陪家人"] { color: #f9a8d4; }
+.cat-btn[data-cat="運動"]   { color: #60a5fa; }
+.cat-btn[data-cat="睡眠"]   { color: #818cf8; }
+.cat-btn[data-cat="發呆"]   { color: #94a3b8; }
+
+.input-row { display: flex; gap: 8px; }
+.input-field {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px;
+  color: var(--text); font-family: inherit; font-size: 15px;
+  width: 100%; outline: none; transition: border-color .2s, box-shadow .2s;
+}
+.input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
+.input-field::placeholder { color: var(--text3); }
+.input-field.small { width: 110px; flex-shrink: 0; }
+
+.mood-row { display: flex; gap: 8px; }
+.mood-btn {
+  flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: calc(var(--radius) - 2px); padding: 10px 4px;
+  cursor: pointer; font-size: 20px; text-align: center; transition: all .15s;
+}
+.mood-btn.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); box-shadow: 0 0 10px var(--glow); }
+
+.location-row { display: flex; gap: 8px; }
+.loc-btn {
+  flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: calc(var(--radius) - 2px); padding: 9px 4px;
+  cursor: pointer; font-size: 12px; color: var(--text2); font-family: inherit;
+  text-align: center; transition: all .15s;
+}
+.loc-btn.selected { border-color: var(--accent); color: var(--accent2); background: color-mix(in srgb, var(--accent) 15%, transparent); }
+
+.submit-btn {
+  width: 100%; background: var(--accent);
+  border: none; border-radius: var(--radius);
+  padding: 16px; color: #fff;
+  font-family: inherit; font-size: 16px; font-weight: 600;
+  cursor: pointer; transition: all .2s; margin-top: 4px;
+  box-shadow: 0 0 24px var(--glow), 0 4px 12px rgba(0,0,0,0.3);
+  letter-spacing: 0.5px;
+}
+.submit-btn:active { opacity: .8; transform: scale(0.98); }
+
+/* ── RECORDS ─────────────────────────────────── */
+.date-group { margin-bottom: 24px; }
+.date-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; padding: 0 2px; }
+.record-card {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 14px; margin-bottom: 8px;
+  display: flex; gap: 12px; align-items: flex-start; position: relative;
+  border: 1px solid var(--border);
+}
+.record-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.record-body { flex: 1; min-width: 0; }
+.record-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.record-cat { font-size: 13px; font-weight: 600; }
+.record-time { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.record-desc { font-size: 14px; color: var(--text2); margin-top: 3px; }
+.record-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.tag { background: var(--surface2); border-radius: 6px; padding: 2px 7px; font-size: 11px; color: var(--text3); }
+.record-del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 16px; padding: 2px 4px; opacity: 0; transition: opacity .2s; }
+.record-card:hover .record-del { opacity: 1; }
+
+/* ── STATS ───────────────────────────────────── */
+.stats-period { display: flex; gap: 6px; margin-bottom: 20px; }
+.period-btn {
+  flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: calc(var(--radius) - 2px); padding: 9px;
+  cursor: pointer; font-size: 13px; color: var(--text2); font-family: inherit;
+  text-align: center; transition: all .15s;
+}
+.period-btn.active { border-color: var(--accent); color: var(--accent2); background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: 0 0 8px var(--glow); }
+
+.stat-card { background: var(--surface); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+.stat-card-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.bar-row { margin-bottom: 10px; }
+.bar-label { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.bar-name { font-size: 13px; }
+.bar-val { font-size: 13px; color: var(--text2); }
+.bar-track { background: var(--surface2); border-radius: 99px; height: 6px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; transition: width .5s ease; }
+
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.summary-item { background: var(--surface); border-radius: var(--radius); padding: 14px; text-align: center; border: 1px solid var(--border); }
+.summary-num { font-size: 26px; font-weight: 600; letter-spacing: -1px; color: var(--accent2); }
+.summary-lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.mood-avg { display: flex; align-items: center; gap: 10px; }
+.mood-big { font-size: 36px; }
+.mood-score { font-size: 22px; font-weight: 600; }
+.mood-desc { font-size: 12px; color: var(--text2); }
+
+.empty { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 14px; line-height: 1.8; }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--accent); color: #fff;
+  padding: 10px 20px; border-radius: 99px; font-size: 14px;
+  opacity: 0; transition: all .3s; z-index: 999; white-space: nowrap;
+  box-shadow: 0 0 20px var(--glow);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- PAGE: ADD -->
+<div class="page active" id="page-add">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="header-icon" id="header-icon">👻</div>
+      <div class="page-title">時間記錄</div>
+      <div class="page-sub" id="now-time"></div>
+    </div>
+    <button class="theme-switcher-btn" id="theme-toggle-btn">🎨 換風格</button>
+  </div>
+
+  <div class="theme-panel" id="theme-panel">
+    <button class="theme-option active" data-theme="gengar"><span class="th-icon">👻</span>耿鬼</button>
+    <button class="theme-option" data-theme="cafe"><span class="th-icon">☕</span>咖啡館</button>
+    <button class="theme-option" data-theme="aurora"><span class="th-icon">🌌</span>極光</button>
+    <button class="theme-option" data-theme="paper"><span class="th-icon">📓</span>紙張</button>
+    <button class="theme-option" data-theme="neon"><span class="th-icon">🌃</span>霓虹</button>
+  </div>
+
+  <div class="form-section">
+    <div class="form-label">分類</div>
+    <div class="cat-grid">
+      <button class="cat-btn" data-cat="工作"><span class="cat-icon">💼</span>工作</button>
+      <button class="cat-btn" data-cat="研究"><span class="cat-icon">📚</span>研究</button>
+      <button class="cat-btn" data-cat="娛樂"><span class="cat-icon">🎮</span>娛樂</button>
+      <button class="cat-btn" data-cat="陪家人"><span class="cat-icon">👨‍👩‍👧</span>陪家人</button>
+      <button class="cat-btn" data-cat="運動"><span class="cat-icon">🏃</span>運動</button>
+      <button class="cat-btn" data-cat="睡眠"><span class="cat-icon">😴</span>睡眠</button>
+      <button class="cat-btn" data-cat="發呆"><span class="cat-icon">😶</span>發呆</button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-label">做了什麼</div>
+    <div class="input-row">
+      <input class="input-field" id="desc" placeholder="簡短描述（可不填）" />
+      <input class="input-field small" id="duration" type="number" placeholder="分鐘" min="1" />
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-label">心情</div>
+    <div class="mood-row">
+      <button class="mood-btn" data-mood="1">😩</button>
+      <button class="mood-btn" data-mood="2">😕</button>
+      <button class="mood-btn" data-mood="3">😐</button>
+      <button class="mood-btn" data-mood="4">😊</button>
+      <button class="mood-btn" data-mood="5">😄</button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-label">地點</div>
+    <div class="location-row">
+      <button class="loc-btn" data-loc="家">🏠 家</button>
+      <button class="loc-btn" data-loc="公司">🏢 公司</button>
+      <button class="loc-btn" data-loc="外出">🌍 外出</button>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submit-btn">儲存記錄</button>
+</div>
+
+<!-- PAGE: LIST -->
+<div class="page" id="page-list">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-title">所有記錄</div>
+    </div>
+  </div>
+  <div id="records-list"></div>
+</div>
+
+<!-- PAGE: STATS -->
+<div class="page" id="page-stats">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-title">統計分析</div>
+    </div>
+  </div>
+  <div class="stats-period">
+    <button class="period-btn active" data-period="day">今天</button>
+    <button class="period-btn" data-period="week">本週</button>
+    <button class="period-btn" data-period="month">本月</button>
+    <button class="period-btn" data-period="year">今年</button>
+  </div>
+  <div id="stats-content"></div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" data-page="add">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    記錄
+  </button>
+  <button class="nav-btn" data-page="list">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    記錄列表
+  </button>
+  <button class="nav-btn" data-page="stats">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    統計
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const THEME_ICONS = { gengar:'👻', cafe:'☕', aurora:'🌌', paper:'📓', neon:'🌃' };
+const THEME_NAMES = { gengar:'耿鬼', cafe:'深夜咖啡館', aurora:'極光', paper:'紙張筆記', neon:'霓虹都市' };
+const CAT_COLORS = {
+  '工作':'#ff5566','研究':'#c084fc','娛樂':'#4ade80',
+  '陪家人':'#f9a8d4','運動':'#60a5fa','睡眠':'#818cf8','發呆':'#94a3b8'
+};
+const MOOD_EMOJI = ['','😩','😕','😐','😊','😄'];
+const MOOD_TEXT  = ['','很差','不好','普通','不錯','很好'];
+
+let selectedCat=null, selectedMood=null, selectedLoc=null, currentPeriod='day';
+
+// ── THEME ──────────────────────────────────────
+let currentTheme = localStorage.getItem('theme') || 'gengar';
+
+function applyTheme(t) {
+  currentTheme = t;
+  document.body.setAttribute('data-theme', t);
+  document.getElementById('header-icon').textContent = THEME_ICONS[t];
+  document.querySelectorAll('.theme-option').forEach(o => o.classList.toggle('active', o.dataset.theme === t));
+  localStorage.setItem('theme', t);
+}
+applyTheme(currentTheme);
+
+document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+  document.getElementById('theme-panel').classList.toggle('open');
+});
+document.querySelectorAll('.theme-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    applyTheme(btn.dataset.theme);
+    document.getElementById('theme-panel').classList.remove('open');
+    showToast(THEME_ICONS[btn.dataset.theme] + ' ' + THEME_NAMES[btn.dataset.theme]);
+  });
+});
+
+// ── NAV ────────────────────────────────────────
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-' + btn.dataset.page).classList.add('active');
+    if (btn.dataset.page === 'list') renderList();
+    if (btn.dataset.page === 'stats') renderStats();
+  });
+});
+
+// ── FORM INPUTS ────────────────────────────────
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedCat = btn.dataset.cat;
+  });
+});
+document.querySelectorAll('.mood-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedMood = +btn.dataset.mood;
+  });
+});
+document.querySelectorAll('.loc-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.loc-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedLoc = btn.dataset.loc;
+  });
+});
+
+// ── STORAGE ────────────────────────────────────
+function getRecords() { return JSON.parse(localStorage.getItem('time_records') || '[]'); }
+function saveRecords(r) { localStorage.setItem('time_records', JSON.stringify(r)); }
+
+// ── SUBMIT ─────────────────────────────────────
+document.getElementById('submit-btn').addEventListener('click', () => {
+  if (!selectedCat) { showToast('請選擇分類'); return; }
+  const dur = parseInt(document.getElementById('duration').value);
+  if (!dur || dur < 1) { showToast('請輸入時長（分鐘）'); return; }
+  const rec = {
+    id: Date.now(), ts: new Date().toISOString(),
+    cat: selectedCat, desc: document.getElementById('desc').value.trim(),
+    duration: dur, mood: selectedMood, loc: selectedLoc
+  };
+  const records = getRecords(); records.unshift(rec); saveRecords(records);
+  document.querySelectorAll('.cat-btn,.mood-btn,.loc-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('desc').value = '';
+  document.getElementById('duration').value = '';
+  selectedCat=null; selectedMood=null; selectedLoc=null;
+  showToast('✓ 已儲存');
+});
+
+// ── LIST ───────────────────────────────────────
+function renderList() {
+  const records = getRecords();
+  const el = document.getElementById('records-list');
+  if (!records.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>還沒有記錄<br>點「記錄」開始新增</div>`; return;
+  }
+  const grouped = {};
+  records.forEach(r => { const d=r.ts.slice(0,10); if(!grouped[d]) grouped[d]=[]; grouped[d].push(r); });
+  el.innerHTML = Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).map(date => {
+    const label = formatDateLabel(date);
+    const items = grouped[date].map(r => {
+      const color = CAT_COLORS[r.cat]||'#888';
+      const time = new Date(r.ts).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+      const tags = [r.duration+' 分鐘', r.mood?MOOD_EMOJI[r.mood]:null, r.loc||null].filter(Boolean);
+      return `<div class="record-card">
+        <div class="record-dot" style="background:${color}"></div>
+        <div class="record-body">
+          <div class="record-top">
+            <span class="record-cat" style="color:${color}">${r.cat}</span>
+            <span class="record-time">${time}</span>
+          </div>
+          ${r.desc?`<div class="record-desc">${r.desc}</div>`:''}
+          <div class="record-tags">${tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        </div>
+        <button class="record-del" onclick="deleteRecord(${r.id})">×</button>
+      </div>`;
+    }).join('');
+    return `<div class="date-group"><div class="date-label">${label}</div>${items}</div>`;
+  }).join('');
+}
+
+function deleteRecord(id) {
+  saveRecords(getRecords().filter(r=>r.id!==id));
+  renderList(); showToast('已刪除');
+}
+
+function formatDateLabel(d) {
+  const today=new Date(); today.setHours(0,0,0,0);
+  const yest=new Date(today); yest.setDate(today.getDate()-1);
+  const t=new Date(d);
+  if(t.toDateString()===today.toDateString()) return '今天';
+  if(t.toDateString()===yest.toDateString()) return '昨天';
+  return d.replace(/-/g,'/');
+}
+
+// ── STATS ──────────────────────────────────────
+document.querySelectorAll('.period-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); currentPeriod=btn.dataset.period; renderStats();
+  });
+});
+
+function filterByPeriod(records, period) {
+  const now = new Date();
+  return records.filter(r => {
+    const d = new Date(r.ts);
+    if (period==='day') return d.toDateString()===now.toDateString();
+    if (period==='week') { const s=new Date(now); s.setDate(now.getDate()-now.getDay()); s.setHours(0,0,0,0); return d>=s; }
+    if (period==='month') return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    if (period==='year') return d.getFullYear()===now.getFullYear();
+  });
+}
+
+function renderStats() {
+  const records = filterByPeriod(getRecords(), currentPeriod);
+  const el = document.getElementById('stats-content');
+  if (!records.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div>這個時段還沒有記錄</div>`; return; }
+  const totalMin = records.reduce((s,r)=>s+r.duration,0);
+  const totalH = (totalMin/60).toFixed(1);
+  const moodRecs = records.filter(r=>r.mood);
+  const avgMood = moodRecs.length ? moodRecs.reduce((s,r)=>s+r.mood,0)/moodRecs.length : 0;
+  const catMap = {};
+  records.forEach(r=>{ if(!catMap[r.cat]) catMap[r.cat]=0; catMap[r.cat]+=r.duration; });
+  const maxMin = Math.max(...Object.values(catMap));
+  const catBars = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([cat,min])=>{
+    const pct=Math.round(min/totalMin*100), h=(min/60).toFixed(1), color=CAT_COLORS[cat]||'#888';
+    return `<div class="bar-row">
+      <div class="bar-label"><span class="bar-name" style="color:${color}">${cat}</span><span class="bar-val">${h}h (${pct}%)</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${min/maxMin*100}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+  const moodHTML = avgMood ? `<div class="stat-card"><div class="stat-card-title">平均心情</div>
+    <div class="mood-avg"><div class="mood-big">${MOOD_EMOJI[Math.round(avgMood)]}</div>
+    <div><div class="mood-score">${avgMood.toFixed(1)} / 5</div><div class="mood-desc">${MOOD_TEXT[Math.round(avgMood)]}</div></div></div></div>` : '';
+  el.innerHTML = `
+    <div class="summary-grid">
+      <div class="summary-item"><div class="summary-num">${totalH}</div><div class="summary-lbl">總時數 (h)</div></div>
+      <div class="summary-item"><div class="summary-num">${records.length}</div><div class="summary-lbl">記錄筆數</div></div>
+    </div>
+    <div class="stat-card"><div class="stat-card-title">時間分配</div>${catBars}</div>
+    ${moodHTML}`;
+}
+
+// ── CLOCK ──────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('now-time').textContent =
+    now.toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'}) + '　' +
+    now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+}
+updateClock(); setInterval(updateClock, 10000);
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+</script>
+</body>
+</html>
